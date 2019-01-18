@@ -1,0 +1,23 @@
+Foundations 2
+
+
+vtp domain CCIE_VTP
+vtp pass CCIE_PASS
+
+
+spanning-tree mst configuration
+ name REGION123
+ revision 50
+ instance 100 vlan 124, 222
+ instance 101 vlan 1, 121, 239
+
+
+
+
+
+route-map RM_C2O
+match int lo0
+
+ router ospf 1
+redistribute connected route-map RM_C2O subnet
+

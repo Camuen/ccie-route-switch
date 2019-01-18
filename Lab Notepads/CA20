@@ -1,0 +1,167 @@
+CA20
+
+
+key chain KEY_RIP
+key 1
+key-string whytest
+
+
+
+router rip
+ver 2
+no auto
+pass def
+net 141.37.0.0
+
+
+
+
+ip rip authentication key-chain KEY_RIP
+ip rip authentication mode text
+
+
+
+
+route-map RM_EIGRP_TO_RIP deny 10
+
+
+
+
+R2 and R3
+
+!OSPF to RIP
+
+route-map OSPF_TO_RIP deny 10
+match tag 120
+route-map OSPF_TO_RIP deny 20
+match tag 90
+route-map OSPF_TO_RIP deny 30
+match tag 1120
+route-map OSPF_TO_RIP permit 40
+set tag 110
+
+router rip
+red ospf 1 metric 1 route-map OSPF_TO_RIP
+
+!RIP TP OSPF
+
+route-map RIP_TO_OSPF deny 10
+match tag 110
+route-map RIP_TO_OSPF permit 20
+match tag 1120
+route-map RIP_TO_OSPF permit 30
+match tag 90
+route-map RIP_TO_OSPF permit 40
+set tag 120
+
+router ospf 1
+red rip sub route-map RIP_TO_OSPF
+
+
+
+R5
+
+!RIP (to R2 and R3) to EIGRP
+
+route-map RIP_TO_EIGRP deny 10
+match tag 1120
+route-map RIP_TO_EIGRP deny 20
+match tag 90
+route-map RIP_TO_EIGRP permit 30
+match tag 110
+route-map RIP_TO_EIGRP permit 40
+set tag 120
+
+router eigrp 20
+red rip metric 1 1 1 1 1 route-map RIP_TO_EIGRP
+
+!EIGRP to RIP
+
+route-map EIGRP_TO_RIP deny 10
+match tag 120
+route-map EIGRP_TO_RIP deny 20
+match tag 110
+route-map EIGRP_TO_RIP permit 30
+match tag 1120
+route-map EIGRP_TO_RIP permit 40
+set tag 90
+
+router rip
+red eigrp 20 metric 1 route-map EIGRP_TO_RIP
+
+
+
+SW1 and SW2
+
+!EIGRP to RIP (sw1 2 and 3)
+
+route-map EIGRP_TO_RIP deny 10
+match tag 1120
+route-map EIGRP_TO_RIP permit 20
+match tag 110
+route-map EIGRP_TO_RIP permit 30
+match tag 120
+route-map EIGRP_TO_RIP permit 40
+set tag 90
+
+
+router rip
+red eigrp 20 metric 1 route-map EIGRP_TO_RIP
+
+
+route-map RIP_TO_EIGRP deny 10
+match tag 120
+route-map RIP_TO_EIGRP deny 20
+match tag 90
+route-map RIP_TO_EIGRP deny 30
+match tag 110
+route-map RIP_TO_EIGRP permit 40
+set tag 1120
+
+router eigrp 20
+red rip metric 1 1 1 1 1 route-map RIP_TO_EIGRP
+
+
+
+
+
+tclquit
+
+tclsh
+
+foreach i {
+141.37.1.1 
+141.37.2.1 
+141.37.16.1 
+141.37.101.1
+141.37.1.2 
+141.37.2.2 
+141.37.25.2 
+141.37.102.1
+141.37.2.3 
+141.37.35.3 
+141.37.103.1 
+141.37.1.4 
+141.37.2.4 
+141.37.46.4 
+141.37.104.1 
+141.37.204.1 
+141.37.11.5 
+141.37.25.5 
+141.37.35.5 
+141.37.105.1 
+141.37.16.6 
+141.37.46.6 
+141.37.106.1
+141.37.11.10
+141.37.22.10
+141.37.110.1
+141.37.11.20 
+141.37.22.20 
+141.37.120.1 
+141.37.22.7 
+141.37.107.1
+} {ping $i rep 3 timeout 1}
+
+
+

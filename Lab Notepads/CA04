@@ -1,0 +1,180 @@
+CA04
+
+
+vtp mode transparent
+
+vlan 10
+name Net-10
+vlan 11
+name Net-11
+vlan 12
+name Net-12
+vlan 16
+name Net-16
+vlan 20
+name Net-20
+vlan 30
+name Net-30
+vlan 40
+name Net-40
+vlan 50
+name Net-50
+exit
+
+
+SW1
+vtp mode transparent
+vlan 10
+name Net-10
+vlan 11
+name Net-11
+vlan 12
+name Net-12
+vlan 16
+name Net-16
+vlan 20
+name Net-20
+vlan 40
+name Net-40
+exit
+
+SW2
+vtp mode transparent
+vlan 16
+name Net-16
+vlan 20
+name Net-20
+vlan 30
+name Net-30
+vlan 50
+name Net-50
+exit
+
+
+SW3
+vtp mode transparent
+vlan 11
+name Net-11
+vlan 40
+name Net-40
+exit
+
+SW4
+vtp mode transparent
+vlan 30
+name Net-30
+exit
+
+
+
+
+
+
+5.0 Redistribution
+
+
+R1 and R3
+
+route-map RIP_INTO_OSPF deny 10
+match tag 90
+route-map RIP_INTO_OSPF deny 20
+match tag 110
+route-map RIP_INTO_OSPF permit 30
+set tag 120
+
+route-map OSPF_INTO_RIP deny 10
+match tag 90
+route-map OSPF_INTO_RIP deny 20
+match tag 120
+route-map OSPF_INTO_RIP permit 30
+set tag 110
+
+router ospf 1
+redistribute rip subnet route-map RIP_INTO_OSPF
+
+router rip
+redistribute ospf 1 route-map OSPF_INTO_RIP metric 1
+
+
+R1, R2
+
+route-map EIGRP_INTO_OSPF deny 10
+match tag 110
+route-map EIGRP_INTO_OSPF deny 20
+match tag 120
+route-map EIGRP_INTO_OSPF permit 30
+set tag 90
+
+route-map OSPF_INTO_EIGRP deny 10
+match tag 90
+route-map OSPF_INTO_EIGRP deny 20
+match tag 120
+route-map OSPF_INTO_EIGRP permit 30
+set tag 110
+
+
+route-map EIGRP_INTO_RIP deny 10
+match tag 110
+route-map EIGRP_INTO_RIP deny 20
+match tag 120
+route-map EIGRP_INTO_RIP permit 30
+set tag 90
+
+route-map RIP_INTO_EIGRP deny 10
+match tag 90
+route-map RIP_INTO_EIGRP deny 20
+match tag 120
+route-map RIP_INTO_EIGRP permit 30
+set tag 110
+
+
+router eigrp 100
+red ospf 1 route-map OSPF_INTO_EIGRP metric 1 1 1 1 1
+red rip route-map RIP_INTO_EIGRP metric 1 1 1 1 1
+
+router rip
+red eigrp 100 route-map EIGRP_INTO_RIP metric 1
+
+router ospf 1
+red eigrp 100 route-map EIGRP_INTO_OSPF sub
+
+
+
+
+tclsh
+
+foreach i {
+151.10.1.1 
+151.10.12.1 
+151.10.22.1 
+151.10.124.1
+151.10.135.1
+198.1.1.1 
+140.10.2.1 
+151.10.12.2 
+151.10.26.2 
+151.10.100.2
+151.10.124.2
+151.10.4.3 
+151.10.10.1 
+151.10.20.1 
+151.10.34.3 
+151.10.43.3 
+151.10.100.3
+151.10.135.3
+151.10.34.4 
+151.10.43.4 
+151.10.44.129
+151.10.100.4 
+151.10.124.4 
+151.10.100.5 
+151.10.135.5 
+140.10.1.1 
+151.10.26.6 
+151.10.66.1 
+151.10.100.6
+198.1.1.6 
+151.10.34.7 
+151.10.100.7
+151.10.22.20
+} {ping $i rep 3 timeout 1}

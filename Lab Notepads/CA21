@@ -1,0 +1,261 @@
+CA21
+
+1.0
+--------------------
+
+SW1
+
+vtp domain ccie.cisco.com
+vtp mode transparent
+vtp file startup-config
+
+vlan 10
+name MARKET
+vlan 30
+name ENG
+vlan 40
+name GUEST
+vlan 151
+name GARAGE
+vlan 218
+name STORAGE
+
+
+int eth0/0
+sw t e d
+sw m t
+sw t al vl 10,151
+no shut
+
+int eth0/1
+sw m ac
+sw ac vl 30
+no shut
+
+int eth0/2
+sw mo ac
+sw ac vl 40
+no shut
+
+int eth0/3
+sw mo ac
+sw ac vl 30
+no shut
+
+int range eth2/2 - 3
+sw t e d
+sw m t
+sw t al vl 10,40
+no shut
+
+int eth2/3
+spanning-tree vlan 10,40 cost 1
+
+int vlan 151
+ip add 10.30.151.110 255.255.255.0
+no shut
+
+
+SW2
+
+
+vtp domain ccie.cisco.com
+vtp mode transparent
+vtp file startup-config
+
+vlan 10
+name MARKET
+vlan 20
+name DEVELOP
+vlan 40
+name GUEST
+vlan 151
+name GARAGE
+vlan 218
+name STORAGE
+
+
+int range eth2/2 - 3
+sw t e d
+sw m t
+sw t al vl 10,40
+no shut
+
+
+int eth0/0
+sw mo ac
+sw ac vl 20
+no shut
+
+int eth0/1
+sw mo ac
+sw ac vl 10
+no shut
+
+int eth0/2
+sw mo ac
+sw ac vl 20
+
+int eth0/3
+sw t e d
+sw m t
+sw t al vl 40,218
+no shut
+
+spanning-tree vlan 10,40 pri 0
+
+int vlan 218
+ip add 10.30.218.120 255.255.255.0
+no shut
+
+
+
+
+
+
+
+
+router bgp 1000
+nei IBGP peer-group
+nei IBGP remote-as 1000
+nei IBGP update-source lo0
+nei IBGP next-hop-self
+nei 10.1.1.6 peer-group IBGP
+nei 10.1.1.7 peer-group IBGP
+nei 10.1.1.8 peer-group IBGP
+nei 10.1.1.9 peer-group IBGP
+
+nei IBGP_RR peer-group
+nei IBGP_RR remote-as 1000
+nei IBGP_RR update-source lo0
+nei IBGP_RR route-reflector-client
+
+nei 10.1.1.11 peer-group IBGP_RR
+nei 10.1.1.12 peer-group IBGP_RR
+
+
+
+
+
+
+router bgp 1000
+nei 10.1.1.9 remote-as 1000
+nei 10.1.1.9 update-source lo0
+nei 10.1.1.9 next-hop-self
+
+
+
+
+
+
+vrf def VPN
+rd 1:1
+route-target both 1:1
+add ipv4
+add ipv6
+
+
+
+R1
+
+router bgp 100
+no bgp default ipv4
+nei VPNV4 peer-group
+nei VPNV4 remote-as 100
+nei VPNV4 update-source lo10
+nei 10.1.30.1 peer-group VPNV4
+nei 10.1.20.1 peer-group VPNV4
+nei 10.1.40.1 peer-group VPNV4
+
+add vpnv4
+nei 10.1.20.1 act
+nei 10.1.30.1 act
+nei 10.1.40.1 act
+
+
+R2
+
+router bgp 100
+no bgp default ipv4
+nei VPNV4 peer-group
+nei VPNV4 remote-as 100
+nei VPNV4 update-source lo20
+nei 10.1.10.1 peer-group VPNV4
+nei 10.1.30.1 peer-group VPNV4
+nei 10.1.40.1 peer-group VPNV4
+
+add vpnv4
+nei 10.1.10.1 act
+nei 10.1.30.1 act
+nei 10.1.40.1 act
+
+
+R3
+
+router bgp 100
+no bgp default ipv4
+nei VPNV4 peer-group
+nei VPNV4 remote-as 100
+nei VPNV4 update-source lo30
+nei 10.1.10.1 peer-group VPNV4
+nei 10.1.20.1 peer-group VPNV4
+nei 10.1.40.1 peer-group VPNV4
+
+add vpnv4
+nei 10.1.20.1 act
+nei 10.1.10.1 act
+nei 10.1.40.1 act
+
+
+R4
+
+router bgp 100
+no bgp default ipv4
+nei VPNV4 peer-group
+nei VPNV4 remote-as 100
+nei VPNV4 update-source lo40
+nei 10.1.30.1 peer-group VPNV4
+nei 10.1.20.1 peer-group VPNV4
+nei 10.1.10.1 peer-group VPNV4
+
+add vpnv4
+nei 10.1.20.1 act
+nei 10.1.30.1 act
+nei 10.1.10.1 act
+
+
+
+
+
+
+crypto isakmp policy 10
+ encr aes
+ authentication pre-share
+ group 2
+
+ cry isa key CISCO address 0.0.0.0
+
+crypto ipsec transform-set metro-transform esp-aes esp-sha-hmac 
+ mode tunnel
+
+crypto ipsec profile metro-profile
+ set transform-set metro-transform
+
+
+int tu129
+tunnel protection ipsec pro metro-profile
+
+
+
+
+
+key chain HSRP_KEY
+ key 1
+  key-string CISCO
+
+int eth0/0
+standby ver 2
+standby 2048 ip 10.10.26.1
+ standby 2048 preempt
+ standby 2048 authentication md5 key-chain HSRP_KEY
+

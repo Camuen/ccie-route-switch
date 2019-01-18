@@ -1,0 +1,31 @@
+crypto isakmp policy 10
+auth pre-share
+group 5
+hash sha
+encr aes
+
+
+crypto isakmp key CISCO address 0.0.0.0
+
+
+crypto ipsec transform-set AES_SHA esp-sha-hmac esp-aes
+mode transport
+
+
+crypto ipsec profile DMVPN
+set transform-set AES_SHA
+
+
+int tu1
+ip mtu 1400
+ip tcp adjust-mss 1360
+
+ip nhrp authentication CISCO
+ip nhrp network-id 100
+ip nhrp map multicast dynamic
+
+tunnel source gi0/1
+tunnel mode gre multipoint
+tunnel key 100
+
+tunnel protection ipsec profile DMVPN

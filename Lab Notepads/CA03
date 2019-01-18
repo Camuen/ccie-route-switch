@@ -1,0 +1,340 @@
+CA03
+
+1.1
+
+
+SW1
+vtp mode transpart
+vlan 10
+name CA
+vlan 20
+name VA
+vlan 30
+name TX
+vlan 40
+name MD
+vlan 50
+name NY
+vlan 60
+name MI
+
+
+
+SW2
+
+vtp mode transparent
+vlan 10
+name CA
+
+vlan 30
+name TX
+
+vlan 40
+name MD
+
+vlan 50
+name NY
+
+vlan 70
+name DC
+
+
+
+
+SW3
+vtp mode transparent
+vlan 30
+name TX
+
+
+SW4
+
+vtp mode transparent
+vlan 30
+name TX
+
+
+
+
+
+4.1
+
+crypto isakmp policy 10
+ encr 3des
+ hash md5
+ authentication pre-share
+ group 2
+crypto isakmp key R1-R4-secret address 0.0.0.0        
+crypto ipsec transform-set R1_R4_TRANSFORM esp-3des esp-sha-hmac 
+ mode tunnel
+crypto ipsec profile R1_R4_PROFILE
+ set transform-set R1_R4_TRANSFORM 
+
+
+
+
+
+
+
+
+
+
+
+8.1
+
+R1
+
+eigrp to ospf
+
+route-map RM_E2O deny 10
+match tag 90
+route-map RM_E2O deny 20
+match tag 120
+route-map RM_E2O deny 30
+match tag 110
+route-map RM_E2O permit 40
+set tag 90
+
+
+ospf to eigrp
+
+route-map RM_O2E deny 10
+match tag 90
+route-map RM_O2E deny 20
+match tag 120
+route-map RM_O2E deny 30
+match tag 110
+route-map RM_O2E permit 40
+set tag 110
+
+
+rip to ospf
+
+route-map RM_R2O deny 10
+match tag 90
+route-map RM_R2O deny 20
+match tag 110
+route-map RM_R2O deny 30
+match tag 120
+route-map RM_R2O permit 40
+set tag 120
+
+ospf to rip
+
+route-map RM_O2R deny 10
+match tag 90
+route-map RM_O2R deny 20
+match tag 120
+route-map RM_O2R deny 30
+match tag 110
+route-map RM_O2R permit 40
+set tag 110
+
+
+eigrp to rip
+
+route-map RM_E2R deny 10
+match tag 90
+route-map RM_E2R deny 20
+match tag 120
+route-map RM_E2R deny 30
+match tag 110
+route-map RM_E2R permit 40
+set tag 90
+
+
+rip to eigrp
+
+route-map RM_R2E deny 10
+match tag 90
+route-map RM_R2E deny 20
+match tag 120
+route-map RM_R2E deny 30
+match tag 110
+route-map RM_R2E permit 40
+set tag 110
+
+
+end
+wr me
+tclsh
+foreach i {
+1.1.1.1 
+111.1.1.1 
+135.15.12.1 
+135.15.13.1 
+135.15.14.1 
+135.15.16.1 
+135.15.21.1 
+135.15.101.1
+2.2.2.2 
+135.15.12.2 
+135.15.21.2 
+135.15.23.2 
+135.15.25.2 
+135.15.26.2 
+135.15.102.1
+3.3.3.3 
+111.1.1.1 
+135.15.13.3 
+135.15.23.3 
+135.15.34.3 
+135.15.35.3 
+135.15.103.1
+4.4.4.4 
+111.1.1.1 
+135.15.10.4 
+135.15.14.4 
+135.15.20.4 
+135.15.34.4 
+135.15.104.1
+5.5.5.5 
+135.15.20.5 
+135.15.25.5 
+135.15.35.5 
+135.15.105.1
+6.6.6.6 
+135.15.16.6 
+135.15.26.6 
+135.15.106.1
+7.7.7.7 
+135.15.10.7 
+135.15.20.7 
+135.15.107.1
+10.10.10.10 
+135.15.20.10 
+135.15.110.1 
+20.20.20.20 
+135.15.20.20 
+135.15.120.1 
+} {ping $i repeat 3 timeout 1}
+
+
+
+
+
+
+ip access-list standard EIGRP162-2-OSPF
+ permit 135.15.26.0
+ permit 135.15.16.0
+ permit 135.15.106.0
+ip access-list standard EIGRP162-2-RIP
+ permit 135.15.26.0
+ permit 135.15.16.0
+ permit 135.15.106.0
+ip access-list standard RIP-2-EIGRP162
+ deny   135.15.26.0
+ deny   135.15.16.0
+ deny   135.15.106.0
+ permit any
+ip access-list standard RIP-2-OSPF
+ permit 135.15.25.0
+ permit 135.15.20.0
+ permit 135.15.21.0
+ permit 135.15.23.0
+ permit 135.15.35.0
+ permit 135.15.105.0
+ permit 135.15.102.0
+ permit 135.15.103.0
+ permit 135.15.120.0
+ip access-list standard RIP-distance
+ permit 135.15.20.0
+ permit 135.15.35.0
+ permit 135.15.105.0
+ permit 135.15.110.0
+ permit 135.15.103.0
+ permit 135.15.120.0
+!
+route-map EIGRP162-2-RIP permit 10
+ match ip address EIGRP162-2-RIP
+!
+route-map RIP-2-EIGRP162 permit 10
+ match ip address RIP-2-EIGRP162
+!
+route-map EIGRP162-2-OSPF permit 10
+ match ip address EIGRP162-2-OSPF
+!
+route-map RIP-2-OSPF permit 10
+ match ip address RIP-2-OSPF
+
+
+
+
+
+
+
+router ospf 100
+ redistribute connected subnets route-map Connected-2-OSPF
+ redistribute rip subnets route-map RIP-2-OSPF
+!
+router rip
+ redistribute connected route-map Connected-2-RIP
+ redistribute ospf 100
+ distance 80 0.0.0.0 255.255.255.255 RIP-distance
+!
+ip access-list standard Connected-2-OSPF
+ permit 111.1.1.1
+ permit 135.15.23.0
+ permit 135.15.35.0
+ permit 135.15.103.0
+ip access-list standard Connected-2-RIP
+ permit 111.1.1.1
+ip access-list standard RIP-2-OSPF
+ permit 135.15.25.0
+ permit 135.15.20.0
+ permit 135.15.21.0
+ permit 135.15.23.0
+ permit 135.15.35.0
+ permit 135.15.105.0
+ permit 135.15.102.0
+ permit 135.15.103.0
+ permit 135.15.120.0
+ip access-list standard RIP-distance
+ permit 135.15.25.0
+ permit 135.15.26.0
+ permit 135.15.20.0
+ permit 135.15.21.0
+ permit 135.15.105.0
+ permit 135.15.102.0
+ permit 135.15.120.0
+!
+route-map Connected-2-RIP permit 10
+ match ip address Connected-2-RIP
+!
+route-map Connected-2-OSPF permit 10
+ match ip address Connected-2-OSPF
+!
+route-map RIP-2-OSPF permit 10
+ match ip address RIP-2-OSPF
+!
+
+
+
+
+
+
+ router eigrp 30
+  default-metric 10000 10 255 1 1500
+  redistribute connected route-map Connected-2-EIGRP
+  redistribute ospf 100
+ !
+ router ospf 100
+  redistribute connected subnets route-map Connected-2-OSPF
+  redistribute eigrp 30 subnets
+ !
+ ip access-list standard Connected-2-EIGRP
+  permit 111.1.1.1
+  permit 135.15.10.0
+  permit 135.15.14.0
+  permit 135.15.34.0
+  permit 135.15.104.0
+ ip access-list standard Connected-2-OSPF
+  permit 111.1.1.1
+  permit 135.15.20.0
+  permit 135.15.104.0
+ route-map Connected-2-EIGRP permit 10
+  match ip address Connected-2-EIGRP
+ !
+ route-map Connected-2-OSPF permit 10
+  match ip address Connected-2-OSPF
+ !

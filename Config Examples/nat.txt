@@ -1,0 +1,167 @@
+NAT
+
+Basic NAT
+config steps
+
+set inside and outside interfaces
+Identify source of traffic - ACL
+Identify destination of traffic - ACL
+
+Built a NAT pool - route this if it's a new range
+
+
+
+R5(config)#do sh ip access-list
+Extended IP access list VLAN8_NAT
+    10 permit ip 155.1.8.0 0.0.0.255 155.1.146.0 0.0.0.255
+
+ip nat pool VLAN45 155.1.45.16 155.1.45.254 prefix-length 24
+ip nat inside source list VLAN8_NAT pool VLAN45
+
+
+R5#sh ip nat translations 
+Pro  Inside global         Inside local          Outside local         Outside global
+---  155.1.45.16           155.1.8.8             ---                   ---
+icmp 155.1.45.16:0         155.1.8.8:0           155.1.146.1:0         155.1.146.1:0
+Total number of translations: 2
+
+
+
+Inside Global - Address being used to NAT the traffic on the local router
+Inside Local - Actual source of the traffic from inside
+Outside Local - Destination address
+Outside Global - Destination address
+
+
+Question -
+Is the destination in the ACL actually used, when pinging beyond the vlan 146 the traffic was still natted
+
+
+
+
+NAT Overload - aka PAT, Port Address Translation
+
+Question - why didn't a prefix list matched in a route-map work for the NAT source traffic
+
+ip access-list extended R1-3_LOOPBACK
+ permit ip 150.1.0.0 0.0.3.255 any
+ 
+ip nat inside source list R1-3_LOOPBACK interface GigabitEthernet1.108 overload
+
+
+R8#sh ip nat translations 
+Pro  Inside global         Inside local          Outside local         Outside global
+icmp 155.1.108.8:1         150.1.1.1:1           155.1.108.10:1        155.1.108.10:1
+icmp 155.1.108.8:3         150.1.3.3:0           155.1.108.10:0        155.1.108.10:3
+icmp 155.1.108.8:2         150.1.2.2:0           155.1.108.10:0        155.1.108.10:2
+Total number of translations: 3
+
+
+
+
+
+
+
+NAT with Route-map
+
+
+ip nat pool NAT_POOL_LOOPBACK 155.1.23.200 155.1.23.200 prefix-length 24
+ip nat inside source route-map RM_NAT_R2LO pool NAT_POOL_LOOPBACK
+ip nat inside source route-map RM_NAT_VLAN2 interface GigabitEthernet1.23 overload
+R2(config)#
+R2(config)#
+R2(config)#do sh route-map
+route-map RM_NAT_R2LO, permit, sequence 10
+  Match clauses:
+    ip address (access-lists): R2_LOOPBACK_NAT 
+  Set clauses:
+  Policy routing matches: 0 packets, 0 bytes
+route-map RM_NAT_VLAN2, permit, sequence 10
+  Match clauses:
+    ip address (access-lists): R2_VLAN2_NAT 
+  Set clauses:
+  Policy routing matches: 0 packets, 0 bytes
+R2(config)#
+R2(config)#
+R2(config)#
+R2(config)#do sh ip access-list
+Extended IP access list R2_LOOPBACK_NAT
+    10 permit ip 150.1.2.0 0.0.0.255 any
+Extended IP access list R2_VLAN2_NAT
+    10 permit ip 155.1.2.0 0.0.0.255 any
+    
+    
+
+R2#sh ip nat translations 
+Pro  Inside global         Inside local          Outside local         Outside global
+icmp 155.1.23.200:4        150.1.2.2:4           150.1.10.10:4         150.1.10.10:4
+icmp 155.1.23.200:1        150.1.2.2:1           150.1.1.1:1           150.1.1.1:1
+icmp 155.1.23.2:2          155.1.2.2:3           150.1.10.10:3         150.1.10.10:2
+icmp 155.1.23.2:1          155.1.2.2:2           150.1.1.1:2           150.1.1.1:1
+Total number of translations: 4
+
+R2#
+R2#
+
+
+
+
+Static NAT
+
+
+ip nat inside source static 155.1.58.8 155.1.45.8
+R5#
+R5#
+R5#
+R5#sh ip nat tr
+R5#sh ip nat translations 
+Pro  Inside global         Inside local          Outside local         Outside global
+---  155.1.45.8            155.1.58.8            ---                   ---
+icmp 155.1.45.8:5          155.1.58.8:5          155.1.45.4:5          155.1.45.4:5
+tcp  155.1.45.8:23         155.1.58.8:23         155.1.45.4:54147      155.1.45.4:54147
+Total number of translations: 3
+
+R5#
+
+
+verify traffic order of operations
+NAT before Route
+
+
+
+
+Static PAT
+
+R5#sh ip nat translations 
+Pro  Inside global         Inside local          Outside local         Outside global
+tcp  155.1.45.44:10023     155.1.10.10:23        ---                   ---
+tcp  155.1.45.44:8023      155.1.8.8:23          ---                   ---
+tcp  155.1.45.44:10023     155.1.10.10:23        155.1.45.4:15596      155.1.45.4:15596
+tcp  155.1.45.44:8023      155.1.8.8:23          155.1.45.4:50803      155.1.45.4:50803
+Total number of translations: 4
+
+R5#
+R5#sh run | s nat
+ ip nat outside
+ ip nat inside
+ip nat inside source static tcp 155.1.8.8 23 155.1.45.44 8023 extendable
+ip nat inside source static tcp 155.1.10.10 23 155.1.45.44 10023 extendable
+R5#
+
+
+Research further
+What does extendable mean
+  extendable  Extend this translation when used
+  
+  !
+  !
+  !
+  R5(config)#ip nat inside source static tcp 155.1.8.8 23 155.1.45.44 8023 ?
+  extendable  Extend this translation when used
+  mapping-id  Associate a mapping id to this mapping
+  no-alias    Do not create an alias for the global address
+  no-payload  No translation of embedded address/port in the payload
+  redundancy  NAT redundancy operation
+  route-map   Specify route-map
+  vrf         Specify vrf
+  <cr>
