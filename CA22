@@ -1,0 +1,39 @@
+CA22
+
+
+permit 172.17.19.0 0.0.0.255
+permit 172.17.21.0 0.0.0.255
+permit 172.17.192.0 0.0.0.255
+permit 172.17.194.0 0.0.0.255
+permit 172.17.213.0 0.0.0.255
+permit 172.17.220.0 0.0.0.255
+permit 172.17.196.0 0.0.0.255
+permit 172.17.216.0 0.0.0.255
+
+
+
+
+
+
+ip access-list standard 3
+permit 172.17.22.0 0.0.0.255
+permit 172.17.24.0 0.0.0.255
+permit 172.17.223.0 0.0.0.255
+permit 172.17.243.0 0.0.0.255
+permit 172.17.224.0 0.0.0.255
+permit 172.17.244.0 0.0.0.255
+
+
+
+
+int tu1
+ ip mtu 1400
+ ip nhrp network-id 1
+ ip tcp adjust-mss 1360
+ tunnel source Serial1/3
+ tunnel mode gre multipoint
+ tunnel key 1
+
+ ip nhrp nhs 172.16.30.1 nbma 123.1.1.2 multicast
+
+

@@ -1,0 +1,16 @@
+INE FS Lab 2
+
+router ospfv3 100
+add ipv4
+pass lo0
+add ipv6
+pass lo0
+
+
+
+  key chain KEY_OSPFv3
+  key 1
+  key-string CISCO
+  cryptographic-algorithm hmac-sha-512
+  router ospfv3 100
+  area 0 authentication key-chain KEY_OSPFv3

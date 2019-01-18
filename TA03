@@ -1,0 +1,24 @@
+TA03
+
+
+no ip access-list extended OUT_BOUND
+
+
+ ip access-list extended OUT_BOUND
+ permit tcp any any eq telnet  reflect RETURN timeout 300
+ permit tcp any any eq 443 reflect RETURN timeout 300
+ permit tcp any any eq www reflect RETURN timeout 300
+ permit icmp any any echo reflect RETURN timeout 300
+ permit icmp any any echo-reply reflect RETURN timeout 300
+
+
+
+ policy-map QoS12
+ class VOICE
+  priority percent 20
+ class HTTP
+  bandwidth percent 25
+ class SNMP
+  bandwidth percent 20
+ class NTP
+  bandwidth percent 5

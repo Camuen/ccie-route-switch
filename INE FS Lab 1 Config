@@ -1,0 +1,200 @@
+INE FS Lab 1 Config
+
+
+route-map RM_C2O permit 10
+ set metric 1000
+
+
+
+
+
+ router eigrp EIGRP
+ !
+ address-family ipv4 unicast autonomous-system 56
+  !
+  af-interface default
+   authentication mode hmac-sha-256 CC!E_!nE
+  exit-af-interface
+  !
+metric weights 0 0 0 1 0 0 0 
+
+
+
+
+
+
+
+
+!R3 and R4
+
+route-map RM_RIP_TO_OSPF deny 10
+match tag 110
+route-map RM_RIP_TO_OSPF deny 20
+match tag 90
+route-map RM_RIP_TO_OSPF permit 30
+set tag 120
+
+
+route-map RM_OSPF_TO_RIP deny 10
+match tag 120
+route-map RM_OSPF_TO_RIP deny 20
+match tag 90
+route-map RM_OSPF_TO_RIP permit 30
+set tag 110
+
+
+router rip
+red ospf 100 route-map RM_OSPF_TO_RIP metric 1
+
+router ospf 100
+red rip sub route-map RM_RIP_TO_OSPF
+
+
+!R1
+
+route-map RM_OSPF_TO_EIGRP deny 10
+match tag 90
+route-map RM_OSPF_TO_EIGRP deny 20
+match tag 120
+route-map RM_OSPF_TO_EIGRP permit 30
+set tag 110
+
+route-map RM_EIGRP_TO_OSPF deny 10
+match tag 110
+route-map RM_EIGRP_TO_OSPF deny 20
+match tag 120
+route-map RM_EIGRP_TO_OSPF permit 30
+set tag 90
+
+router ospf 100
+red eigrp 56 sub route-map RM_EIGRP_TO_OSPF
+
+router eigrp EIGRP
+add ipv4 as 56
+topo base
+red ospf 100 route-map RM_OSPF_TO_EIGRP 
+
+
+
+! R5
+
+route-map RM_EIGRP_TO_RIP deny 10
+match tag 120
+route-map RM_EIGRP_TO_RIP deny 20
+match tag 110
+route-map RM_EIGRP_TO_RIP permit 30
+set tag 90
+
+route-map RM_RIP_TO_EIGRP deny 10
+match tag 90
+route-map RM_RIP_TO_EIGRP deny 20
+match tag 110
+route-map RM_RIP_TO_EIGRP permit 30
+set tag 120
+
+router rip
+red eigrp 56 metric 1 route-map RM_EIGRP_TO_RIP
+
+router eigrp EIGRP
+add ipv4 as 56
+topo base
+red rip route-map RM_RIP_TO_EIGRP
+default-metric 15000 1 255 1 1500 
+
+
+
+
+
+
+
+
+
+
+
+tclsh
+
+foreach i {
+10.0.12.1 
+10.0.13.1 
+10.0.14.1 
+136.5.17.1 
+136.5.18.1 
+192.122.3.1 
+10.0.12.2 
+10.0.23.1 
+10.0.24.1 
+192.122.3.2
+10.0.13.2 
+10.0.23.2 
+10.0.34.1 
+10.0.35.1 
+10.0.36.1 
+192.122.3.3
+10.0.14.2 
+10.0.24.2 
+10.0.34.2 
+10.0.45.1 
+10.0.46.1 
+192.122.3.4
+10.0.35.2 
+10.0.45.2 
+10.0.56.1 
+136.6.58.5 
+192.122.3.5
+10.0.36.2 
+10.0.46.2 
+10.0.56.2 
+192.122.3.6
+136.5.17.7 
+172.30.78.7
+192.122.3.7
+136.5.18.8 
+136.6.58.8 
+172.30.78.8
+192.122.3.8
+192.122.3.16 
+} {ping $i repeat 3 timeout 1}
+
+
+
+
+
+
+
+router eigrp EIGRP
+ !
+ address-family ipv4 unicast autonomous-system 789
+  !
+  topology base
+  exit-af-topology
+  network 172.19.102.10 0.0.0.0
+
+
+
+
+
+
+
+router bgp 65006
+no bgp default ipv4
+nei 192.122.3.4 remote-as 65006
+nei 192.122.3.4 update-source lo0
+add vpnv4
+nei 192.122.3.4 act
+nei 192.122.3.4 next-hop-self
+
+
+
+
+
+
+router bgp 65006
+nei ::192:122:3:6 remote-as 65006
+nei ::192:122:3:6 update-source lo0
+add ipv6
+nei ::192:122:3:6 act
+nei ::192:122:3:6 next-hop-self
+
+
+
+

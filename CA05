@@ -1,0 +1,137 @@
+CA05
+
+
+SW1 and SW2
+
+
+conf t
+vlan 12,14,16,23,35,146,200
+exit
+
+
+SW3 SW4
+
+conf t
+vlan 14,110,120,999,110,120,200,999
+exit
+
+
+
+2.0 - DVTI
+
+R1 and 4
+int tu241
+ip unnumbered lo241
+tunnel source se1/0
+tunnel destination 1.1.2.2
+tunnel mode ipsec ipv4
+
+R2
+int virtual-temp 124 type tunnel
+ip unnumbered lo241
+tunnel mode ipsec ipv4
+
+
+R1 and 4
+crypto isakmp key sharedpswd address 0.0.0.0
+
+crypto isakmp policy 10
+encr 3des
+hash md5
+authen pre-share
+
+cry ipsec transform-set vti_transform esp-3des esp-md5-hmac
+mode tunnel
+
+cry ipsec profile vti-profile
+set transform-set vti_transform
+
+R2
+
+crypto isakmp key sharedpswd address 0.0.0.0
+
+crypto isakmp policy 10
+encr 3des
+hash md5
+authen pre-share
+
+cry ipsec transform-set vti_transform esp-3des esp-md5-hmac
+mode tunnel
+
+cry ipsec profile vti_profile
+set transform-set vti_transform
+
+
+
+
+4.0 - EIGRP
+
+key chain EIGRP
+ key 1
+  key-string cisco
+  accept-lifetime 00:00:00 Jan 1 2013 00:00:00 Jan 1 2030
+  send-lifetime 00:00:00 Jan 1 2013 00:00:00 Jan 1 2030
+
+
+
+
+R1 - 6 -- others are customer sites
+
+tclsh
+foreach i {
+172.16.12.1 
+172.16.61.1 
+172.16.101.1
+172.16.146.1
+172.16.241.1
+172.16.12.2 
+172.16.23.2 
+172.16.102.1
+172.16.241.2
+30.30.30.3 
+172.16.23.3 
+172.16.43.3 
+172.16.53.3 
+172.16.103.1
+172.16.14.4 
+172.16.43.4 
+172.16.104.1
+172.16.146.4
+172.16.241.4
+172.16.25.5 
+172.16.53.5 
+172.16.105.1
+172.16.61.6 
+172.16.106.1
+172.16.146.6
+} {ping $i repeat 3 time 1}
+
+tclquit
+
+
+
+
+
+
+
+8.3
+
+router eigrp EIGRP
+add ipv6 as 555
+
+
+
+tclsh
+foreach r {
+2001::12:1
+2001::16:1
+2001::12:2
+2001::23:2
+2001::23:3
+2001::43:3
+2001::43:4
+2001::53:3
+2001::53:5
+2001::16:6
+} {ping $r rep 3 time 1}
+

@@ -1,0 +1,180 @@
+CA08
+
+
+1.1 and 1.3
+
+ SW1 and SW2
+
+ vtp domain CCIE
+ vtp mode transparent
+
+ vlan 10,16,25,36,40
+ exit
+
+
+SW3 and SW4
+
+ vtp domain CCIE
+ vtp mode transparent
+
+ vlan 10,40,36
+
+
+
+1.2
+
+
+SW1
+
+int eth0/1
+sw m ac
+sw ac vl 25
+
+int eth1/0
+sw m ac
+sw ac vl 25
+
+int eth1/1
+sw m ac
+sw ac vl 16
+
+
+SW2
+
+int eth0/0
+sw t e d
+sw m t
+sw t al vl 10,16
+
+
+int eth0/2
+sw m a
+sw a vl 36
+
+int eth0/3
+sw m a
+sw a vl 40
+
+
+
+SW3
+
+int eth0/0
+sw m ac
+sw ac vl 10
+
+int eth0/1
+sw m ac
+sw ac vl 40
+
+
+SW4
+
+int eth0/1
+sw m ac
+sw ac vl 36
+
+
+
+
+
+
+
+
+
+
+
+
+tclsh
+
+foreach i {
+160.20.10.1 
+160.20.14.1 
+160.20.16.1 
+160.20.101.1
+160.20.123.1
+160.20.25.2 
+160.20.102.1
+160.20.123.2
+160.20.36.3 
+160.20.103.1
+160.20.123.3
+160.20.163.1
+160.20.169.1
+160.20.174.1
+160.20.14.4 
+160.20.40.4 
+160.20.104.1
+160.20.25.5 
+160.20.105.1
+160.20.16.6 
+160.20.106.1 
+160.20.10.10
+160.20.17.10
+160.20.17.20 
+160.20.40.20 
+160.20.36.6 
+160.20.107.1 
+} {ping $i rep 3 timeout 1}
+
+
+
+
+6.0 BGP
+
+
+R1
+
+router bgp 100
+nei 160.20.102.1 remote-as 100
+nei 160.20.103.1 remote-as 100
+nei 160.20.102.1 update-source lo101
+nei 160.20.103.1 update-source lo101
+nei 160.20.16.6 remote-as 600
+
+
+
+R2
+
+router bgp 100
+nei 160.20.101.1 remote-as 100
+nei 160.20.101.1 update-source lo102
+nei 160.20.101.1 route-reflector-client
+
+nei 160.20.104.1 remote-as 100
+nei 160.20.104.1 update-source lo102
+nei 160.20.104.1 route-reflector-client
+
+nei 160.20.103.1 remote-as 100
+nei 160.20.103.1 update-source lo102
+nei 160.20.103.1 route-reflector-client
+
+
+
+R3
+
+router bgp 100
+nei 160.20.101.1 remote-as 100
+nei 160.20.101.1 update-source lo103
+nei 160.20.101.1 route-reflector-client
+
+nei 160.20.104.1 remote-as 100
+nei 160.20.104.1 update-source lo103
+nei 160.20.104.1 route-reflector-client
+
+nei 160.20.102.1 remote-as 100
+nei 160.20.102.1 update-source lo103
+nei 160.20.102.1 route-reflector-client
+
+nei 160.20.36.6 remote-as 700
+
+
+
+R4
+
+router bgp 100
+nei 160.20.102.1 remote-as 100
+nei 160.20.103.1 remote-as 100
+nei 160.20.102.1 update-source lo104
+nei 160.20.103.1 update-source lo104
+

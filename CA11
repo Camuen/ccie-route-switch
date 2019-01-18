@@ -1,0 +1,569 @@
+CA11
+
+
+
+1.0 ======================================
+
+!!!SW1 
+
+en
+conf t
+vtp mode transparent
+
+vlan 10
+name NET-10
+vlan 20
+name NET-20
+vlan 30
+name NET-30
+vlan 40
+name NET-40
+vlan 50
+name NET-50
+vlan 60
+name NET-60
+vlan 700
+name NET-700
+vlan 800
+name NET-800
+vlan 3000
+name NET-3000
+mtu 3000
+exit
+
+int range eth3/0 - 1
+sw mo ac
+sw ac vl 40
+no shut
+
+int eth1/3
+shut
+int eth2/0
+shut
+int eth2/1
+shut
+
+int range eth2/2 - 3
+sw t e d
+sw m t
+no shut
+
+int eth2/3
+sw t al vl 10
+
+int eth2/2
+sw t al vl 20,30,30,40,50,60,700,800,3000
+no shut
+
+int eth1/2
+sw t e d
+sw m t
+sw t al vl 30,3000
+
+
+int eth0/1
+sw mo ac 
+sw ac vl 10
+no shut
+
+int eth0/2
+sw mo ac
+sw ac vl 30
+no shut
+
+int eth1/0
+sw mo ac
+sw ac vl 20
+
+int eth1/1
+sw t e d
+sw m t
+sw t al vl 40,3000
+
+
+
+
+
+!!!SW2 
+
+en
+conf t
+vtp mode transparent
+
+vlan 10
+name NET-10
+vlan 20
+name NET-20
+vlan 30
+name NET-30
+vlan 40
+name NET-40
+vlan 50
+name NET-50
+vlan 60
+name NET-60
+vlan 700
+name NET-700
+vlan 800
+name NET-800
+vlan 3000
+name NET-3000
+mtu 3000
+exit
+
+
+
+int eth1/3
+shut
+int eth2/0
+shut
+int eth2/1
+shut
+
+
+int range eth2/2 - 3
+sw t e d
+sw m t
+no shut
+
+int eth2/3
+sw t al vl 10
+
+int eth2/2
+sw t al vl 20,30,30,40,50,60,700,800,3000
+
+
+int eth1/2
+sw mo ac
+sw ac vl 10
+no shut
+
+
+int eth0/0
+sw mo ac
+sw ac vl 40
+no shut
+
+int eth0/2
+sw mo ac
+sw ac vl 20
+no shut
+
+int eth0/3
+sw mo ac
+sw ac vl 30
+
+
+
+!!!SW3
+
+en
+conf t
+
+vtp mode transparent
+
+vlan 30
+name NET-30
+vlan 3000
+name NET-3000
+mtu 3000
+exit
+
+
+int eth1/3
+shut
+int range eth2/0 - 3
+shut
+
+
+int eth1/2
+sw t e d
+sw m t
+sw t al vl 30,3000
+no shut
+
+int eth0/0
+sw mo ac
+sw ac vl 3000
+no shut
+
+int eth0/1
+sw mo ac
+sw ac vl 30
+no shut
+
+
+
+
+!!! SW 4
+
+en 
+conf t
+
+vtp mode transparent
+
+vlan 10
+name NET-10
+exit
+
+int eth0/1
+sw m ac
+sw ac vl 10
+
+int eth1/3
+shut
+int range eth2/0 - 3
+shut
+
+
+int eth1/2
+sw mo ac
+sw ac vl 10
+no shut
+
+
+
+
+=====================================
+2.0 OSPF
+===================================
+
+
+R1
+
+
+int eth0/2
+ip ospf pri 2
+ip ospf net non-broadcast
+
+int se1/0
+ip ospf net broadcast
+
+int lo101
+ip ospf net point-to-point
+
+int eth0/1
+ip ospf hello-int 5
+
+router ospf 1
+router-id 172.16.101.1
+network 172.16.123.0 0.0.0.255 area 0
+network 172.16.14.0 0.0.0.255 area 14
+nei 172.16.123.2
+nei 172.16.123.3
+net 172.16.101.1 0.0.0.0 area 10
+net 172.16.16.0 0.0.0.255 area 16
+area 16 virtual-link 172.16.106.1
+
+
+R2
+
+int lo102
+ip ospf net point-to-point
+
+int eth0/2
+ip ospf net non-broadcast
+ip ospf pri 0
+
+router ospf 1
+router-id 172.16.102.1
+net 172.16.123.0 0.0.0.255 area 0
+nei 172.16.123.1
+net 172.16.102.1 0.0.0.0 area 20
+
+
+
+R3
+
+int eth0/2
+ip ospf net non-broadcast
+ip ospf pri 0
+
+router ospf 1
+router-id 172.16.103.1
+net 172.16.123.0 0.0.0.255 area 0
+nei 172.16.123.1
+
+
+R4
+
+int se1/0
+ip ospf net broadcast
+
+int lo104
+ip ospf net point-to-point
+
+router ospf 1
+router-id 172.16.104.1
+net 172.16.14.0 0.0.0.255 area 14
+net 172.16.104.1 0.0.0.0 area 14
+
+
+
+R6
+
+int eth0/0.40
+ip ospf hello-int 5
+
+int lo106
+ip ospf net point-to-point
+
+
+router ospf 1
+router-id 172.16.106.1
+net 172.16.16.0 0.0.0.255 area 16
+area 16 virtual-link 172.16.101.1
+net 172.16.67.0 0.0.0.255 area 67
+net 172.16.106.1 0.0.0.0 area 16
+
+
+R7
+
+route-map RM_C2O permit 10
+match int lo107
+set metric-type type-2
+set metric 100
+set tag 200
+route-map RM_C2O permit 20
+set metric-type type-1
+set tag 200
+
+router ospf 1
+router-id 172.16.107.1
+red con sub route-map RM_C2O
+net 172.16.67.0 0.0.0.255 area 67
+
+
+
+
+=========================================
+3.0 EIGRP
+========================================
+
+
+R3
+
+
+router eigrp 100
+eigrp router-id 172.16.103.1
+net 172.16.35.0 0.0.0.255
+
+
+R5
+
+router eigrp 100
+eigrp router-id 172.16.105.1
+net 172.16.35.0 0.0.0.255
+net 172.16.105.1 0.0.0.0
+net 172.16.50.16 0.0.0.15
+
+
+
+
+
+===============
+5.0 Redistribution
+================
+
+
+route-map RM_RIP_TO_OSPF deny 10
+match tag 90
+route-map RM_RIP_TO_OSPF deny 20
+match tag 110
+route-map RM_RIP_TO_OSPF permit 30
+set tag 120
+
+
+route-map RM_OSPF_TO_RIP deny 10
+match tag 90
+route-map RM_OSPF_TO_RIP deny 20
+match tag 120
+route-map RM_OSPF_TO_RIP permit 30
+set tag 110
+
+route-map RM_OSPF_TO_EIGRP deny 10
+match tag 90
+route-map RM_OSPF_TO_EIGRP deny 20
+match tag 120
+route-map RM_OSPF_TO_EIGRP permit 30
+set tag 110
+
+route-map RM_EIGRP_TO_OSPF deny 10
+match tag 120
+route-map RM_EIGRP_TO_OSPF deny 20
+match tag 110
+route-map RM_EIGRP_TO_OSPF permit 30
+set tag 90
+
+route-map RM_RIP_TO_EIGRP deny 10
+match tag 110
+route-map RM_RIP_TO_EIGRP deny 20
+match tag 90
+route-map RM_RIP_TO_EIGRP permit 30
+set tag 120
+
+route-map RM_EIGRP_TO_RIP deny 10
+match tag 110
+route-map RM_EIGRP_TO_RIP deny 20
+match tag 120
+route-map RM_EIGRP_TO_RIP permit 30
+set tag 90
+
+
+
+
+
+
+R2
+
+router rip
+default-metric 1
+redistribute ospf 1 route-map RM_OSPF_TO_RIP
+
+router ospf 1
+red rip sub route-map RM_RIP_TO_OSPF
+
+
+
+R3
+
+router rip
+default-metric 1
+red ospf 1 route-map RM_OSPF_TO_RIP
+red eigrp 100 route-map RM_EIGRP_TO_RIP
+
+router eigrp 100
+default-metric 1 1 1 1 1
+red ospf 1 route-map RM_OSPF_TO_EIGRP
+red rip route-map RM_RIP_TO_EIGRP
+
+router ospf 1
+red rip sub route-map RM_RIP_TO_OSPF
+red eigrp 100 sub route-map RM_EIGRP_TO_OSPF
+
+
+
+R4
+
+router ospf 1
+red rip sub route-map RM_RIP_TO_OSPF
+
+router rip
+default-metric 1
+red ospf 1 route-map RM_OSPF_TO_RIP
+
+
+
+
+
+
+TCL
+
+
+tclsh
+
+foreach i {
+172.16.14.1 
+172.16.16.1 
+172.16.101.1
+172.16.123.1
+172.16.20.2 
+172.16.102.1
+172.16.123.2
+172.16.34.3 
+172.16.35.3 
+172.16.103.1
+172.16.123.3
+172.16.14.4 
+172.16.34.4 
+172.16.104.1
+172.16.35.5 
+172.16.50.17
+172.16.50.21
+172.16.50.25
+172.16.105.1
+172.16.16.6 
+172.16.67.6 
+172.16.106.1
+172.16.67.7 
+172.16.107.1
+172.16.107.7
+172.16.34.10 
+172.16.50.5 
+172.16.50.9 
+172.16.50.13 
+172.16.110.129
+172.16.20.10
+172.16.120.1
+} {ping $i rep 3 timeout 1}
+
+
+
+
+
+==================================
+6.0 BGP
+==================================
+
+
+R6
+
+router bgp 600
+nei 172.16.16.1 remote-as 100
+net 6.6.6.0 mask 255.255.255.0
+nei 172.16.67.7 remote-as 700
+
+
+R7
+
+router bgp 700
+nei 172.17.67.6 remote-as 600
+
+
+R9
+
+router bgp 200
+net 20.20.20.0 mask 255.255.255.0
+nei 172.16.20.2 remote-as 100
+
+
+R5
+
+router bgp 500
+net 5.5.5.0 mask 255.255.255.0
+nei 172.16.35.3 remote-as 100
+
+
+
+
+R1
+
+router bgp 65100
+synch
+nei 172.16.16.6 remote-as 600
+nei 172.16.123.2 remote-as 65200
+nei 172.16.123.3 remote-as 65300
+
+
+
+R2
+
+router bgp 65200
+synch
+nei 172.16.20.10 remote-as 200
+nei 172.16.123.1 remote-as 65100
+nei 172.16.123.3 remote-as 65300
+
+
+R3
+
+
+
+router bgp 65300
+synch
+nei 172.16.35.5 remote-as 500
+nei 172.16.123.1 remote-as 65100
+nei 172.16.123.2 remote-as 65200
+
+
+

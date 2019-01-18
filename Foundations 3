@@ -1,0 +1,27 @@
+Foundations 3
+
+
+vtp domain CCIE_VTP3
+vtp password VTP3_PASS hidden
+vtp mode server
+vtp version 3
+
+
+
+
+
+
+!
+interface Tunnel100
+ no ip redirects
+ ip mtu 1400
+ ip nhrp authentication !DMVPN!
+ ip nhrp network-id 100
+ ip nhrp holdtime 60
+ ip tcp adjust-mss 1360
+ tunnel source GigabitEthernet1.100
+ tunnel mode gre multipoint
+ tunnel key 100
+ip nhrp nhs 128.10.254.3 nbma  128.10.100.3 multicast
+
+
